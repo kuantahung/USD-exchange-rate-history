@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>USD/TWD 50年匯率與乖離率分析</title>
+    <title>USD/TWD 歷史匯率與排序分析</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
         :root {
             --primary-color: #2c3e50;
@@ -15,7 +17,7 @@
             --text-sub: #6b7280;
             --up-color: #ef4444; /* 紅色 */
             --down-color: #10b981; /* 綠色 */
-            --bot-color: #4a148c; /* 台銀紫 */
+            --highlight: #eab308; /* 黃色高亮 */
         }
 
         body {
@@ -78,8 +80,8 @@
 
         /* 即時匯率特別樣式 */
         .live-card {
-            background: linear-gradient(135deg, #f3e8ff 0%, #ffffff 100%);
-            border: 1px solid #d8b4fe;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border: 1px solid #bae6fd;
             position: relative;
         }
 
@@ -103,7 +105,7 @@
 
         .source-tag {
             font-size: 10px;
-            background-color: var(--bot-color);
+            background-color: #0284c7;
             color: white;
             padding: 2px 6px;
             border-radius: 4px;
@@ -148,6 +150,10 @@
             font-size: 14px;
             margin-top: 10px;
         }
+        
+        .btn-link:hover {
+            background-color: #1e6091;
+        }
 
         /* 圖表區 */
         .section-title {
@@ -175,14 +181,45 @@
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
 
-        /* 表格區 (修復顯示問題) */
+        /* 排序控制區 */
+        .sort-controls {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+
+        .sort-btn {
+            background: white;
+            border: 1px solid #d1d5db;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            color: var(--text-main);
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .sort-btn.active {
+            background: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+            box-shadow: 0 2px 5px rgba(41, 128, 185, 0.3);
+        }
+
+        /* 表格區 */
         .table-wrapper {
             background: var(--card-bg);
             border-radius: 12px;
             overflow: hidden;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            overflow-x: auto; /* 橫向捲動 */
-            max-height: 500px; /* 縱向捲動 */
+            overflow-x: auto;
+            max-height: 500px;
             overflow-y: auto;
         }
 
@@ -190,7 +227,7 @@
             width: 100%;
             border-collapse: collapse;
             font-size: 14px;
-            white-space: nowrap; /* 手機不換行 */
+            white-space: nowrap;
         }
 
         th {
@@ -199,7 +236,7 @@
             font-weight: 600;
             text-align: left;
             padding: 12px 16px;
-            position: sticky; /* 固定標題列 */
+            position: sticky;
             top: 0;
             z-index: 10;
             border-bottom: 2px solid #e5e7eb;
@@ -218,7 +255,7 @@
         .event-text {
             font-size: 12px;
             color: #555;
-            white-space: normal; /* 事件文字可換行 */
+            white-space: normal;
             min-width: 180px;
         }
 
@@ -234,10 +271,10 @@
 
 <div class="container">
     <header>
-        <h1>USD/TWD 歷史匯率儀表板</h1>
-        <div class="subtitle">1975 - 2025 | 中央銀行數據基準</div>
-        <a href="https://rate.bot.com.tw/xrt" target="_blank" class="btn-link">
-            前往 台灣銀行 官網查詢
+        <h1>USD/TWD 歷史匯率與排序分析</h1>
+        <div class="subtitle">1975 - 2025 | 中央銀行歷史數據基準</div>
+        <a href="https://www.moneydj.com/iquote/iQuoteExchange.djhtm" target="_blank" class="btn-link">
+            <i class="fa-solid fa-chart-line"></i> 前往 MoneyDJ 查詢即時匯率
         </a>
     </header>
 
@@ -264,10 +301,10 @@
         </div>
 
         <div class="stat-card live-card">
-            <div class="source-tag">資料來源：台灣銀行</div>
+            <div class="source-tag">資料源: 台灣銀行</div>
             <div class="stat-label">現金賣出 (Cash Sell)</div>
-            <div class="stat-value loading-text" id="liveBotRate" style="color:#4a148c;">--.--</div>
-            <div class="stat-sub" id="liveUpdateTime">讀取數據中...</div>
+            <div class="stat-value loading-text" id="liveBotRate" style="color:#0284c7;">--.--</div>
+            <div class="stat-sub" id="liveUpdateTime">連線更新中...</div>
         </div>
     </div>
 
@@ -276,7 +313,20 @@
         <canvas id="rateChart"></canvas>
     </div>
 
-    <div class="section-title">年度詳細數據與事件</div>
+    <div class="section-title">年度詳細數據</div>
+    
+    <div class="sort-controls">
+        <button class="sort-btn active" onclick="sortData('year')">
+            <i class="fa-regular fa-calendar"></i> 依年份
+        </button>
+        <button class="sort-btn" onclick="sortData('high')">
+            <i class="fa-solid fa-arrow-down-wide-short"></i> 匯率由高到低
+        </button>
+        <button class="sort-btn" onclick="sortData('low')">
+            <i class="fa-solid fa-arrow-up-wide-short"></i> 匯率由低到高
+        </button>
+    </div>
+
     <div class="table-wrapper">
         <table id="dataTable">
             <thead>
@@ -287,18 +337,18 @@
                 </tr>
             </thead>
             <tbody id="tableBody">
-            </tbody>
+                </tbody>
         </table>
     </div>
 
     <footer>
         <p>Generated by Gemini AI Assistant</p>
-        <p>歷史數據含估算，即時匯率抓取自台銀公告 CSV，若連線失敗請以官網為準。</p>
+        <p>註：因 MoneyDJ 防爬蟲限制，卡片數值來源為台灣銀行 CSV 以確保穩定顯示，按鈕則連結至 MoneyDJ。</p>
     </footer>
 </div>
 
 <script>
-    // 1. 定義數據 (確保在全域範圍)
+    // 1. 定義數據 (50年完整數據)
     const historicalData = [
         { year: 1975, rate: 38.00, event: "固定匯率時期 (1 USD = 38 TWD)" },
         { year: 1978, rate: 36.00, event: "改為機動匯率 / 中美斷交" },
@@ -331,59 +381,79 @@
         { year: 2025, rate: 32.65, event: "目前匯率區間 (2025 Est.)" }
     ];
 
-    // 2. 主程式
-    function initDashboard() {
-        console.log("初始化儀表板...");
+    let globalAvg = 0; // 全域變數儲存平均值
 
-        // 計算統計數據
+    // 2. 初始化
+    function initDashboard() {
+        console.log("初始化...");
+        
+        // 統計計算
         const rates = historicalData.map(d => d.rate);
         const sum = rates.reduce((a, b) => a + b, 0);
-        const avg = sum / rates.length;
+        globalAvg = sum / rates.length;
+        
         const min = Math.min(...rates);
         const minYear = historicalData.find(d => d.rate === min).year;
         const currentData = historicalData[historicalData.length - 1];
-        const currentRate = currentData.rate;
-        const diffPercent = ((currentRate - avg) / avg) * 100;
-
-        // 更新 DOM
-        document.getElementById('avgRate').innerText = avg.toFixed(2);
+        
+        // 更新卡片
+        document.getElementById('avgRate').innerText = globalAvg.toFixed(2);
         document.getElementById('minRate').innerText = min.toFixed(2);
         document.getElementById('minYear').innerText = `(${minYear})`;
-        document.getElementById('currentRateDisplay').innerText = currentRate.toFixed(2);
+        document.getElementById('currentRateDisplay').innerText = currentData.rate.toFixed(2);
 
-        // 乖離率顏色
+        // 乖離率
+        const diffPercent = ((currentData.rate - globalAvg) / globalAvg) * 100;
         const diffBadge = document.getElementById('diffBadge');
-        const sign = diffPercent > 0 ? "+" : "";
-        diffBadge.innerText = `${sign}${diffPercent.toFixed(2)}%`;
+        diffBadge.innerText = (diffPercent > 0 ? "+" : "") + diffPercent.toFixed(2) + "%";
         diffBadge.className = diffPercent > 0 ? "diff-tag diff-positive" : "diff-tag diff-negative";
 
         // 繪圖與製表
-        renderChart(avg);
-        renderTable(avg);
+        renderChart(globalAvg);
+        sortData('year'); // 預設依年份排序
         
-        // 執行匯率抓取
+        // 抓取匯率
         fetchLiveRate();
     }
 
-    // 3. 渲染表格 (Fix: 確保選取到正確的 tbody)
-    function renderTable(avg) {
-        const tbody = document.getElementById('tableBody');
-        if (!tbody) {
-            console.error("找不到 tableBody 元素！");
-            return;
+    // 3. 排序邏輯
+    function sortData(mode) {
+        // 更新按鈕樣式
+        const btns = document.querySelectorAll('.sort-btn');
+        btns.forEach(btn => btn.classList.remove('active'));
+        
+        // 找出被點擊的按鈕並加亮
+        // 這裡簡單處理：依序對應 year, high, low
+        if(mode === 'year') btns[0].classList.add('active');
+        if(mode === 'high') btns[1].classList.add('active');
+        if(mode === 'low') btns[2].classList.add('active');
+
+        // 複製陣列避免動到原資料
+        let sortedData = [...historicalData];
+
+        if (mode === 'year') {
+            // 年份倒序 (新的在上面)
+            sortedData.sort((a, b) => b.year - a.year);
+        } else if (mode === 'high') {
+            // 匯率高到低
+            sortedData.sort((a, b) => b.rate - a.rate);
+        } else if (mode === 'low') {
+            // 匯率低到高
+            sortedData.sort((a, b) => a.rate - b.rate);
         }
 
-        // 清空舊內容
+        renderTable(sortedData);
+    }
+
+    // 4. 渲染表格
+    function renderTable(dataToRender) {
+        const tbody = document.getElementById('tableBody');
         tbody.innerHTML = '';
 
-        // 倒序排列
-        const reversedData = [...historicalData].reverse();
-
-        reversedData.forEach(item => {
+        dataToRender.forEach(item => {
             const tr = document.createElement('tr');
-            
-            // 判斷紅綠色
-            const colorClass = item.rate >= avg ? 'rate-up' : 'rate-down';
+            // 簡單的紅綠判斷
+            const colorClass = item.rate >= globalAvg ? 'rate-up' : 'rate-down';
             
             tr.innerHTML = `
                 <td><strong>${item.year}</strong></td>
@@ -392,19 +462,21 @@
             `;
             tbody.appendChild(tr);
         });
-        console.log("表格渲染完成，共 " + reversedData.length + " 筆資料。");
     }
 
-    // 4. 繪製圖表
+    // 5. 繪製圖表 (維持依年份排序的折線圖)
     function renderChart(avgLine) {
         const ctx = document.getElementById('rateChart').getContext('2d');
+        // 圖表資料必須按年份正序，否則線會亂跑
+        const chartData = [...historicalData].sort((a, b) => a.year - b.year);
+
         new Chart(ctx, {
             type: 'line',
             data: {
-                labels: historicalData.map(d => d.year),
+                labels: chartData.map(d => d.year),
                 datasets: [{
                     label: '匯率走勢',
-                    data: historicalData.map(d => d.rate),
+                    data: chartData.map(d => d.rate),
                     borderColor: '#2980b9',
                     backgroundColor: 'rgba(41, 128, 185, 0.1)',
                     borderWidth: 2,
@@ -413,7 +485,7 @@
                     tension: 0.3
                 }, {
                     label: '50年平均線',
-                    data: Array(historicalData.length).fill(avgLine),
+                    data: Array(chartData.length).fill(avgLine),
                     borderColor: '#e74c3c',
                     borderWidth: 1.5,
                     borderDash: [5, 5],
@@ -428,11 +500,10 @@
                 plugins: {
                     legend: { labels: { boxWidth: 10, font: { size: 11 } } },
                     tooltip: {
-                        backgroundColor: 'rgba(0,0,0,0.8)',
                         callbacks: {
                             afterLabel: function(context) {
-                                return historicalData[context.dataIndex].event 
-                                    ? ` ${historicalData[context.dataIndex].event}` : '';
+                                return chartData[context.dataIndex].event 
+                                    ? ` ${chartData[context.dataIndex].event}` : '';
                             }
                         }
                     }
@@ -445,63 +516,51 @@
         });
     }
 
-    // 5. ★★★ 修復版即時匯率抓取 ★★★
+    // 6. 抓取匯率 (使用 corsproxy.io + 台銀 CSV 以確保穩定)
     async function fetchLiveRate() {
         const rateEl = document.getElementById('liveBotRate');
         const timeEl = document.getElementById('liveUpdateTime');
         
-        // 使用更穩定的 Proxy 服務 (corsproxy.io)
+        // 穩定的代理 + 台銀數據源
         const targetUrl = 'https://rate.bot.com.tw/xrt/flcsv/0/day';
         const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(targetUrl);
 
         try {
-            console.log("開始抓取台銀匯率...");
             const response = await fetch(proxyUrl);
-            
             if (!response.ok) throw new Error("Network response was not ok");
-            
             const csvText = await response.text();
             
-            // 解析 CSV
             const lines = csvText.split(/\r?\n/);
             let usdRate = null;
 
             for (let line of lines) {
-                // 尋找美金 (USD)
                 if (line.includes('USD') && line.includes('美金')) {
                     const columns = line.split(',');
-                    // 台銀 CSV 格式：幣別,現金買入,現金賣出,即期買入...
-                    // 索引 2 為現金賣出
-                    if (columns[2]) {
-                        usdRate = parseFloat(columns[2].trim());
-                    }
+                    if (columns[2]) usdRate = parseFloat(columns[2].trim());
                     break;
                 }
             }
 
             if (usdRate && !isNaN(usdRate)) {
-                // 成功抓取
                 rateEl.innerText = usdRate.toFixed(2);
-                rateEl.classList.remove('loading-text'); // 移除閃爍loading
+                rateEl.classList.remove('loading-text');
                 
                 const now = new Date();
                 const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
                                  now.getMinutes().toString().padStart(2, '0');
-                timeEl.innerText = `已更新: ${timeString}`;
-                timeEl.style.color = "#15803d"; // 綠色文字
+                timeEl.innerText = `更新於: ${timeString}`;
+                timeEl.style.color = "#0369a1";
             } else {
-                throw new Error("Cannot find USD rate in CSV");
+                throw new Error("Data format error");
             }
-
         } catch (error) {
-            console.error("抓取失敗:", error);
-            // 失敗時顯示備案 (不顯示錯誤代碼，改顯示按鈕)
+            console.error("Fetch failed:", error);
             rateEl.innerHTML = `<span style="font-size:16px; color:#999;">--.--</span>`;
-            timeEl.innerHTML = `<span style="color:#ef4444;">無法連線，請點擊上方按鈕</span>`;
+            timeEl.innerText = "無法自動更新";
         }
     }
 
-    // 確保 DOM 載入後執行
+    // 啟動
     window.onload = initDashboard;
 
 </script>
