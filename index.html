@@ -13,8 +13,8 @@
             --card-bg: #ffffff;
             --text-main: #1f2937;
             --text-sub: #6b7280;
-            --up-color: #ef4444;
-            --down-color: #10b981;
+            --up-color: #ef4444; /* 紅色 */
+            --down-color: #10b981; /* 綠色 */
             --bot-color: #4a148c; /* 台銀紫 */
         }
 
@@ -25,6 +25,7 @@
             background-color: var(--bg-color);
             color: var(--text-main);
             -webkit-font-smoothing: antialiased;
+            padding-bottom: 40px;
         }
 
         .container {
@@ -33,6 +34,7 @@
             padding: 16px;
         }
 
+        /* 標題區塊 */
         header {
             background: var(--card-bg);
             padding: 20px;
@@ -53,7 +55,7 @@
             color: var(--text-sub);
         }
 
-        /* 統計卡片區域 (2x2 Grid) */
+        /* 儀表板卡片 (2x2) */
         .stats-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -71,15 +73,14 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            min-height: 100px;
+            min-height: 110px;
         }
 
-        /* 台銀即時匯率卡片的特殊樣式 */
-        .stat-card.live-card {
-            background: linear-gradient(135deg, #f3e8ff 0%, #ffffff 100%); /* 淡紫色漸層 */
+        /* 即時匯率特別樣式 */
+        .live-card {
+            background: linear-gradient(135deg, #f3e8ff 0%, #ffffff 100%);
             border: 1px solid #d8b4fe;
             position: relative;
-            overflow: hidden;
         }
 
         .stat-label {
@@ -89,7 +90,7 @@
         }
 
         .stat-value {
-            font-size: 22px;
+            font-size: 24px;
             font-weight: 800;
             color: var(--primary-color);
         }
@@ -110,7 +111,6 @@
             display: inline-block;
         }
 
-        /* 乖離率標籤 */
         .diff-tag {
             display: inline-block;
             padding: 2px 6px;
@@ -125,16 +125,16 @@
         .diff-negative { background-color: rgba(16, 185, 129, 0.1); color: var(--down-color); }
 
         /* 更新動畫 */
-        @keyframes pulse-purple {
-            0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.05); opacity: 0.8; }
-            100% { transform: scale(1); opacity: 1; }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
         }
-        .live-update {
-            animation: pulse-purple 0.8s ease-in-out;
-            color: var(--bot-color);
+        .loading-text {
+            animation: pulse 1.5s infinite;
         }
 
+        /* 按鈕 */
         .btn-link {
             display: block;
             width: 100%;
@@ -148,20 +148,8 @@
             font-size: 14px;
             margin-top: 10px;
         }
-        
-        /* 錯誤處理按鈕 */
-        .error-btn {
-            background-color: var(--bot-color);
-            color: white;
-            text-decoration: none;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 12px;
-            margin-top: 5px;
-            display: inline-block;
-        }
 
-        /* 圖表與表格 */
+        /* 圖表區 */
         .section-title {
             font-size: 16px;
             font-weight: 700;
@@ -181,19 +169,20 @@
 
         .chart-box {
             background: var(--card-bg);
-            padding: 12px;
+            padding: 10px;
             border-radius: 12px;
             height: 300px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
 
+        /* 表格區 (修復顯示問題) */
         .table-wrapper {
             background: var(--card-bg);
             border-radius: 12px;
             overflow: hidden;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            overflow-x: auto; 
-            max-height: 500px;
+            overflow-x: auto; /* 橫向捲動 */
+            max-height: 500px; /* 縱向捲動 */
             overflow-y: auto;
         }
 
@@ -201,7 +190,7 @@
             width: 100%;
             border-collapse: collapse;
             font-size: 14px;
-            white-space: nowrap;
+            white-space: nowrap; /* 手機不換行 */
         }
 
         th {
@@ -210,7 +199,7 @@
             font-weight: 600;
             text-align: left;
             padding: 12px 16px;
-            position: sticky;
+            position: sticky; /* 固定標題列 */
             top: 0;
             z-index: 10;
             border-bottom: 2px solid #e5e7eb;
@@ -222,14 +211,15 @@
         }
         
         tr:nth-child(even) { background-color: #fafafa; }
+        
         .rate-up { color: var(--up-color); font-weight: bold; }
         .rate-down { color: var(--down-color); font-weight: bold; }
         
         .event-text {
             font-size: 12px;
             color: #555;
-            white-space: normal;
-            min-width: 160px;
+            white-space: normal; /* 事件文字可換行 */
+            min-width: 180px;
         }
 
         footer {
@@ -237,13 +227,6 @@
             font-size: 11px;
             color: #9ca3af;
             margin-top: 30px;
-            padding-bottom: 20px;
-        }
-
-        @media (max-width: 480px) {
-            h1 { font-size: 18px; }
-            .stat-value { font-size: 20px; }
-            th, td { padding: 10px 12px; font-size: 13px; }
         }
     </style>
 </head>
@@ -252,9 +235,9 @@
 <div class="container">
     <header>
         <h1>USD/TWD 歷史匯率儀表板</h1>
-        <div class="subtitle">1975 - 2025 | 中央銀行歷史數據基準</div>
+        <div class="subtitle">1975 - 2025 | 中央銀行數據基準</div>
         <a href="https://rate.bot.com.tw/xrt" target="_blank" class="btn-link">
-            前往 台灣銀行 完整公告牌
+            前往 台灣銀行 官網查詢
         </a>
     </header>
 
@@ -272,19 +255,19 @@
         </div>
         
         <div class="stat-card">
-            <div class="stat-label">2025 參考匯率</div>
+            <div class="stat-label">2025 目前參考</div>
             <div class="stat-value" id="currentRateDisplay">--</div>
             <div style="display:flex; align-items: center; justify-content: center; margin-top: 4px;">
-                <span class="stat-sub">乖離率: </span>
+                <span class="stat-sub">乖離率 </span>
                 <span id="diffBadge" class="diff-tag">--%</span>
             </div>
         </div>
 
         <div class="stat-card live-card">
             <div class="source-tag">資料來源：台灣銀行</div>
-            <div class="stat-label">現金賣出匯率</div>
-            <div class="stat-value" id="liveBotRate" style="color:#4a148c;">--.--</div>
-            <div class="stat-sub" id="liveUpdateTime">連線讀取中...</div>
+            <div class="stat-label">現金賣出 (Cash Sell)</div>
+            <div class="stat-value loading-text" id="liveBotRate" style="color:#4a148c;">--.--</div>
+            <div class="stat-sub" id="liveUpdateTime">讀取數據中...</div>
         </div>
     </div>
 
@@ -293,153 +276,127 @@
         <canvas id="rateChart"></canvas>
     </div>
 
-    <div class="section-title">年度詳細數據</div>
+    <div class="section-title">年度詳細數據與事件</div>
     <div class="table-wrapper">
         <table id="dataTable">
             <thead>
                 <tr>
-                    <th width="20%">年度</th>
+                    <th width="15%">年度</th>
                     <th width="25%">匯率</th>
                     <th>重大財經事件</th>
                 </tr>
             </thead>
-            <tbody>
-                </tbody>
+            <tbody id="tableBody">
+            </tbody>
         </table>
     </div>
 
     <footer>
         <p>Generated by Gemini AI Assistant</p>
-        <p>本頁面透過公開網路抓取台灣銀行牌告，若連線失敗請直接前往官網查詢。</p>
+        <p>歷史數據含估算，即時匯率抓取自台銀公告 CSV，若連線失敗請以官網為準。</p>
     </footer>
 </div>
 
 <script>
-    // 資料來源：模擬中央銀行歷年數據 + 2025預估
+    // 1. 定義數據 (確保在全域範圍)
     const historicalData = [
-        { year: 1975, rate: 38.00, event: "固定匯率時期" },
-        { year: 1978, rate: 36.00, event: "改為機動匯率" },
+        { year: 1975, rate: 38.00, event: "固定匯率時期 (1 USD = 38 TWD)" },
+        { year: 1978, rate: 36.00, event: "改為機動匯率 / 中美斷交" },
         { year: 1980, rate: 36.01, event: "第二次石油危機" },
-        { year: 1985, rate: 39.85, event: "廣場協議 (美元最高點)" },
-        { year: 1987, rate: 28.55, event: "台幣大幅升值" },
-        { year: 1990, rate: 26.89, event: "台股崩盤/資金匯出" },
-        { year: 1992, rate: 24.52, event: "歷史最低 (台幣最強)" },
+        { year: 1983, rate: 40.27, event: "美元利率歷史高點" },
+        { year: 1985, rate: 39.85, event: "廣場協議 (美元開始走貶)" },
+        { year: 1987, rate: 28.55, event: "台幣大幅升值 / 解除外匯管制" },
+        { year: 1990, rate: 26.89, event: "台股崩盤 / 資金外流" },
+        { year: 1992, rate: 24.52, event: "★ 歷史最低點 (台幣最強)" },
         { year: 1995, rate: 27.27, event: "台海飛彈危機" },
-        { year: 1997, rate: 32.64, event: "亞洲金融風暴" },
-        { year: 2000, rate: 31.23, event: "網路泡沫" },
-        { year: 2001, rate: 35.00, event: "911事件" },
-        { year: 2003, rate: 34.42, event: "SARS疫情" },
+        { year: 1997, rate: 32.64, event: "★ 亞洲金融風暴" },
+        { year: 2000, rate: 31.23, event: "網路泡沫破裂" },
+        { year: 2001, rate: 35.00, event: "911 恐怖攻擊" },
+        { year: 2003, rate: 34.42, event: "SARS 疫情" },
         { year: 2005, rate: 32.17, event: "" },
-        { year: 2008, rate: 31.52, event: "金融海嘯" },
-        { year: 2009, rate: 33.06, event: "QE量化寬鬆" },
-        { year: 2010, rate: 31.64, event: "經濟復甦" },
-        { year: 2011, rate: 29.43, event: "美債降評" },
-        { year: 2015, rate: 31.74, event: "中國股災" },
-        { year: 2016, rate: 32.26, event: "英國脫歐" },
-        { year: 2017, rate: 30.43, event: "" },
-        { year: 2018, rate: 30.15, event: "中美貿易戰" },
-        { year: 2019, rate: 30.91, event: "" },
-        { year: 2020, rate: 29.54, event: "COVID-19/無限QE" },
-        { year: 2021, rate: 28.02, event: "台灣出口最強年" },
-        { year: 2022, rate: 29.76, event: "Fed暴力升息" },
-        { year: 2023, rate: 31.16, event: "美元高利環境" },
-        { year: 2024, rate: 32.10, event: "AI熱潮/強勢美元" },
-        { year: 2025, rate: 32.65, event: "2025 預估統計值" }
+        { year: 2008, rate: 31.52, event: "★ 全球金融海嘯 (Lehman Brothers)" },
+        { year: 2009, rate: 33.06, event: "量化寬鬆 (QE) 開始" },
+        { year: 2010, rate: 31.64, event: "後金融海嘯復甦" },
+        { year: 2012, rate: 29.62, event: "歐債危機" },
+        { year: 2015, rate: 31.74, event: "中國股災 / 匯改" },
+        { year: 2016, rate: 32.26, event: "英國脫歐 / 川普當選" },
+        { year: 2017, rate: 30.43, event: "台幣強勁升值" },
+        { year: 2018, rate: 30.15, event: "中美貿易戰開打" },
+        { year: 2019, rate: 30.91, event: "台商回流投資" },
+        { year: 2020, rate: 29.54, event: "COVID-19 疫情 / 無限QE" },
+        { year: 2021, rate: 28.02, event: "台灣出口最強年 (25年新低)" },
+        { year: 2022, rate: 29.76, event: "美國聯準會暴力升息" },
+        { year: 2023, rate: 31.16, event: "美元高利環境持續" },
+        { year: 2024, rate: 32.10, event: "AI 產業熱潮 / 強勢美元" },
+        { year: 2025, rate: 32.65, event: "目前匯率區間 (2025 Est.)" }
     ];
 
+    // 2. 主程式
     function initDashboard() {
+        console.log("初始化儀表板...");
+
+        // 計算統計數據
         const rates = historicalData.map(d => d.rate);
         const sum = rates.reduce((a, b) => a + b, 0);
         const avg = sum / rates.length;
-        
         const min = Math.min(...rates);
         const minYear = historicalData.find(d => d.rate === min).year;
-        
         const currentData = historicalData[historicalData.length - 1];
         const currentRate = currentData.rate;
-
         const diffPercent = ((currentRate - avg) / avg) * 100;
 
+        // 更新 DOM
         document.getElementById('avgRate').innerText = avg.toFixed(2);
         document.getElementById('minRate').innerText = min.toFixed(2);
         document.getElementById('minYear').innerText = `(${minYear})`;
         document.getElementById('currentRateDisplay').innerText = currentRate.toFixed(2);
 
+        // 乖離率顏色
         const diffBadge = document.getElementById('diffBadge');
         const sign = diffPercent > 0 ? "+" : "";
         diffBadge.innerText = `${sign}${diffPercent.toFixed(2)}%`;
-        
-        if (diffPercent > 0) {
-            diffBadge.className = "diff-tag diff-positive";
-        } else {
-            diffBadge.className = "diff-tag diff-negative";
-        }
+        diffBadge.className = diffPercent > 0 ? "diff-tag diff-positive" : "diff-tag diff-negative";
 
-        drawChart(avg);
-        drawTable(avg);
+        // 繪圖與製表
+        renderChart(avg);
+        renderTable(avg);
+        
+        // 執行匯率抓取
+        fetchLiveRate();
     }
 
-    // ★★★ 抓取台銀即時匯率 (修正版) ★★★
-    async function fetchLiveBotRate() {
-        const rateEl = document.getElementById('liveBotRate');
-        const timeEl = document.getElementById('liveUpdateTime');
-        
-        try {
-            // 台銀 CSV 下載網址
-            const botCsvUrl = 'https://rate.bot.com.tw/xrt/flcsv/0/day';
-            
-            // 使用 api.allorigins.win 的 /get 模式 (JSON格式)，而非 /raw
-            // 這樣可以避免大部分的 MIME type 錯誤和 CORS 阻擋
-            // 加上 timestamp 防止快取
-            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(botCsvUrl)}&t=${Date.now()}`;
-            
-            const response = await fetch(proxyUrl);
-            const data = await response.json();
-            
-            if (!data.contents) throw new Error('No content in proxy response');
-
-            // data.contents 裡面就是 CSV 的純文字內容
-            const csvText = data.contents;
-            
-            // 解析 CSV：尋找含有 "USD" 的行
-            // 台銀格式通常為：幣別, 現金買入, 現金賣出, 即期買入, 即期賣出...
-            const lines = csvText.split(/\r?\n/); // 兼容 Windows/Unix 換行
-            let usdRate = null;
-            
-            for (let line of lines) {
-                // 確保這一行包含 USD 且包含 "美金" (雙重確認)
-                if (line.includes('USD') && line.includes('美金')) {
-                    const columns = line.split(',');
-                    // [0]=幣別, [2]=現金賣出 (Cash Sell) - 一般民眾看這個
-                    // 使用 trim() 去除可能的空白
-                    if (columns[2]) {
-                        usdRate = columns[2].trim();
-                    }
-                    break;
-                }
-            }
-
-            if (usdRate && !isNaN(parseFloat(usdRate))) {
-                rateEl.innerText = parseFloat(usdRate).toFixed(2);
-                rateEl.classList.add('live-update'); // 觸發紫色閃爍動畫
-                
-                const now = new Date();
-                const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
-                                 now.getMinutes().toString().padStart(2, '0');
-                timeEl.innerHTML = `已更新 ${timeString}`;
-            } else {
-                throw new Error('USD rate not found or format changed');
-            }
-            
-        } catch (e) {
-            console.warn("Fetch failed:", e);
-            // 失敗時的備案：顯示按鈕讓使用者自己點過去
-            rateEl.innerHTML = `<span style="font-size:16px; color:#999;">--.--</span>`;
-            timeEl.innerHTML = `<a href="https://rate.bot.com.tw/xrt" target="_blank" class="error-btn">點此查詢台銀公告</a>`;
+    // 3. 渲染表格 (Fix: 確保選取到正確的 tbody)
+    function renderTable(avg) {
+        const tbody = document.getElementById('tableBody');
+        if (!tbody) {
+            console.error("找不到 tableBody 元素！");
+            return;
         }
+
+        // 清空舊內容
+        tbody.innerHTML = '';
+
+        // 倒序排列
+        const reversedData = [...historicalData].reverse();
+
+        reversedData.forEach(item => {
+            const tr = document.createElement('tr');
+            
+            // 判斷紅綠色
+            const colorClass = item.rate >= avg ? 'rate-up' : 'rate-down';
+            
+            tr.innerHTML = `
+                <td><strong>${item.year}</strong></td>
+                <td class="${colorClass}">${item.rate.toFixed(2)}</td>
+                <td class="event-text">${item.event}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+        console.log("表格渲染完成，共 " + reversedData.length + " 筆資料。");
     }
 
-    function drawChart(avgLine) {
+    // 4. 繪製圖表
+    function renderChart(avgLine) {
         const ctx = document.getElementById('rateChart').getContext('2d');
         new Chart(ctx, {
             type: 'line',
@@ -451,11 +408,11 @@
                     borderColor: '#2980b9',
                     backgroundColor: 'rgba(41, 128, 185, 0.1)',
                     borderWidth: 2,
-                    pointRadius: 3,
+                    pointRadius: 2,
                     fill: true,
                     tension: 0.3
                 }, {
-                    label: '50年平均',
+                    label: '50年平均線',
                     data: Array(historicalData.length).fill(avgLine),
                     borderColor: '#e74c3c',
                     borderWidth: 1.5,
@@ -488,10 +445,64 @@
         });
     }
 
-    // 啟動程式
-    initDashboard();
-    // 延遲一點點執行抓取，確保頁面載入完成
-    setTimeout(fetchLiveBotRate, 500);
+    // 5. ★★★ 修復版即時匯率抓取 ★★★
+    async function fetchLiveRate() {
+        const rateEl = document.getElementById('liveBotRate');
+        const timeEl = document.getElementById('liveUpdateTime');
+        
+        // 使用更穩定的 Proxy 服務 (corsproxy.io)
+        const targetUrl = 'https://rate.bot.com.tw/xrt/flcsv/0/day';
+        const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(targetUrl);
+
+        try {
+            console.log("開始抓取台銀匯率...");
+            const response = await fetch(proxyUrl);
+            
+            if (!response.ok) throw new Error("Network response was not ok");
+            
+            const csvText = await response.text();
+            
+            // 解析 CSV
+            const lines = csvText.split(/\r?\n/);
+            let usdRate = null;
+
+            for (let line of lines) {
+                // 尋找美金 (USD)
+                if (line.includes('USD') && line.includes('美金')) {
+                    const columns = line.split(',');
+                    // 台銀 CSV 格式：幣別,現金買入,現金賣出,即期買入...
+                    // 索引 2 為現金賣出
+                    if (columns[2]) {
+                        usdRate = parseFloat(columns[2].trim());
+                    }
+                    break;
+                }
+            }
+
+            if (usdRate && !isNaN(usdRate)) {
+                // 成功抓取
+                rateEl.innerText = usdRate.toFixed(2);
+                rateEl.classList.remove('loading-text'); // 移除閃爍loading
+                
+                const now = new Date();
+                const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
+                                 now.getMinutes().toString().padStart(2, '0');
+                timeEl.innerText = `已更新: ${timeString}`;
+                timeEl.style.color = "#15803d"; // 綠色文字
+            } else {
+                throw new Error("Cannot find USD rate in CSV");
+            }
+
+        } catch (error) {
+            console.error("抓取失敗:", error);
+            // 失敗時顯示備案 (不顯示錯誤代碼，改顯示按鈕)
+            rateEl.innerHTML = `<span style="font-size:16px; color:#999;">--.--</span>`;
+            timeEl.innerHTML = `<span style="color:#ef4444;">無法連線，請點擊上方按鈕</span>`;
+        }
+    }
+
+    // 確保 DOM 載入後執行
+    window.onload = initDashboard;
 
 </script>
 
