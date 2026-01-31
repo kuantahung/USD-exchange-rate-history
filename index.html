@@ -13,8 +13,8 @@
             --card-bg: #ffffff;
             --text-main: #1f2937;
             --text-sub: #6b7280;
-            --up-color: #ef4444; /* 台股紅漲 */
-            --down-color: #10b981; /* 台股綠跌 */
+            --up-color: #ef4444;
+            --down-color: #10b981;
         }
 
         body {
@@ -27,12 +27,11 @@
         }
 
         .container {
-            max-width: 800px; /* 手機優先，限制最大寬度 */
+            max-width: 800px;
             margin: 0 auto;
             padding: 16px;
         }
 
-        /* Header */
         header {
             background: var(--card-bg);
             padding: 20px;
@@ -53,10 +52,10 @@
             color: var(--text-sub);
         }
 
-        /* 統計卡片 (Grid Layout) */
+        /* 統計卡片區域 (2x2 Grid) */
         .stats-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr; /* 手機版兩欄 */
+            grid-template-columns: 1fr 1fr;
             gap: 12px;
             margin-bottom: 20px;
         }
@@ -67,14 +66,16 @@
             border-radius: 12px;
             text-align: center;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
         }
 
-        /* 讓最後一張卡片(目前匯率)在手機上佔滿整行，凸顯重要性 */
-        .stat-card.full-width {
-            grid-column: span 2;
-            background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
-            border: 1px solid #e5e7eb;
+        /* 即時匯率卡片的特殊樣式 */
+        .stat-card.live-card {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border: 1px solid #bbf7d0;
         }
 
         .stat-label {
@@ -92,22 +93,33 @@
         .stat-sub {
             font-size: 11px;
             color: var(--text-sub);
+            margin-top: 4px;
         }
 
-        /* 差異百分比標籤 */
+        /* 乖離率標籤 */
         .diff-tag {
             display: inline-block;
-            padding: 4px 8px;
-            border-radius: 20px;
-            font-size: 13px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
             font-weight: bold;
-            margin-top: 5px;
+            margin-left: 5px;
+            vertical-align: middle;
         }
         
         .diff-positive { background-color: rgba(239, 68, 68, 0.1); color: var(--up-color); }
         .diff-negative { background-color: rgba(16, 185, 129, 0.1); color: var(--down-color); }
 
-        /* 按鈕優化 */
+        /* 更新動畫 */
+        @keyframes pulse-green {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); color: #16a34a; }
+            100% { transform: scale(1); }
+        }
+        .live-update {
+            animation: pulse-green 0.5s ease-in-out;
+        }
+
         .btn-link {
             display: block;
             width: 100%;
@@ -120,12 +132,9 @@
             font-weight: 600;
             font-size: 14px;
             margin-top: 10px;
-            /* 點擊效果 */
-            transition: opacity 0.2s;
         }
-        .btn-link:active { opacity: 0.8; }
 
-        /* 圖表區 */
+        /* 圖表與表格 */
         .section-title {
             font-size: 16px;
             font-weight: 700;
@@ -151,15 +160,13 @@
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
 
-        /* 表格區 (手機優化) */
         .table-wrapper {
             background: var(--card-bg);
             border-radius: 12px;
-            overflow: hidden; /* 圓角 */
+            overflow: hidden;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            /* 讓內部表格可以橫向捲動 */
             overflow-x: auto; 
-            max-height: 500px; /* 限制高度讓標題固定 */
+            max-height: 500px;
             overflow-y: auto;
         }
 
@@ -167,7 +174,7 @@
             width: 100%;
             border-collapse: collapse;
             font-size: 14px;
-            white-space: nowrap; /* 手機上禁止換行，保持排版整齊，允許橫滑 */
+            white-space: nowrap;
         }
 
         th {
@@ -176,7 +183,6 @@
             font-weight: 600;
             text-align: left;
             padding: 12px 16px;
-            /* Sticky Header 關鍵 */
             position: sticky;
             top: 0;
             z-index: 10;
@@ -188,18 +194,16 @@
             border-bottom: 1px solid #f0f0f0;
         }
         
-        /* 斑馬紋 */
         tr:nth-child(even) { background-color: #fafafa; }
-
+        .rate-up { color: var(--up-color); font-weight: bold; }
+        .rate-down { color: var(--down-color); font-weight: bold; }
+        
         .event-text {
             font-size: 12px;
             color: #555;
-            white-space: normal; /* 事件文字允許換行 */
+            white-space: normal;
             min-width: 160px;
         }
-
-        .rate-up { color: var(--up-color); font-weight: bold; }
-        .rate-down { color: var(--down-color); font-weight: bold; }
 
         footer {
             text-align: center;
@@ -209,7 +213,6 @@
             padding-bottom: 20px;
         }
 
-        /* 手機直式優化：調整字體 */
         @media (max-width: 480px) {
             h1 { font-size: 18px; }
             .stat-value { font-size: 20px; }
@@ -234,19 +237,26 @@
             <div class="stat-value" id="avgRate">--</div>
             <div class="stat-sub">長期基準線</div>
         </div>
+
         <div class="stat-card">
             <div class="stat-label">歷史最低 (台幣強)</div>
             <div class="stat-value" style="color:var(--down-color);" id="minRate">--</div>
             <div class="stat-sub" id="minYear">--</div>
         </div>
         
-        <div class="stat-card full-width">
-            <div class="stat-label">2025 參考匯率 (年均/近期)</div>
-            <div style="display:flex; align-items: baseline; justify-content: center; gap: 10px;">
-                <div class="stat-value" id="currentRateDisplay">--</div>
-                <div id="diffBadge" class="diff-tag">--%</div>
+        <div class="stat-card">
+            <div class="stat-label">2025 參考匯率</div>
+            <div class="stat-value" id="currentRateDisplay">--</div>
+            <div style="display:flex; align-items: center; justify-content: center; margin-top: 4px;">
+                <span class="stat-sub">乖離率: </span>
+                <span id="diffBadge" class="diff-tag">--%</span>
             </div>
-            <div class="stat-sub">與50年平均值之差異 (乖離率)</div>
+        </div>
+
+        <div class="stat-card live-card">
+            <div class="stat-label" style="color:#166534;">今日即時 (現金賣出)</div>
+            <div class="stat-value" id="liveBotRate" style="color:#15803d;">--.--</div>
+            <div class="stat-sub" id="liveUpdateTime">連線中...</div>
         </div>
     </div>
 
@@ -278,7 +288,6 @@
 
 <script>
     // 資料來源：模擬中央銀行歷年數據 + 2025預估
-    // 投資專家備註：2025數據為截至目前之均價或參考價
     const historicalData = [
         { year: 1975, rate: 38.00, event: "固定匯率時期" },
         { year: 1978, rate: 36.00, event: "改為機動匯率" },
@@ -307,13 +316,8 @@
         { year: 2022, rate: 29.76, event: "Fed暴力升息" },
         { year: 2023, rate: 31.16, event: "美元高利環境" },
         { year: 2024, rate: 32.10, event: "AI熱潮/強勢美元" },
-        { year: 2025, rate: 32.65, event: "目前匯率參考" } // Update here
+        { year: 2025, rate: 32.65, event: "2025 預估統計值" }
     ];
-
-    // 為求圖表平滑，補齊中間缺失年份的簡單插值 (Demo用途)
-    // 實際應用可放入完整50行數據
-    // 此處為展示邏輯，僅使用關鍵年份繪圖會比較不平滑，故簡單處理：
-    // 若您需要完整每年數據，請將上方陣列填滿即可，程式邏輯通用。
 
     function initDashboard() {
         // 1. 計算統計
@@ -327,37 +331,75 @@
         const currentData = historicalData[historicalData.length - 1];
         const currentRate = currentData.rate;
 
-        // 計算差異百分比 (乖離率)
-        // 公式：(目前 - 平均) / 平均 * 100
         const diffPercent = ((currentRate - avg) / avg) * 100;
 
-        // 2. 更新 DOM
+        // 2. 更新 DOM (靜態數據)
         document.getElementById('avgRate').innerText = avg.toFixed(2);
         document.getElementById('minRate').innerText = min.toFixed(2);
         document.getElementById('minYear').innerText = `(${minYear})`;
         document.getElementById('currentRateDisplay').innerText = currentRate.toFixed(2);
 
-        // 處理差異標籤顏色與符號
         const diffBadge = document.getElementById('diffBadge');
         const sign = diffPercent > 0 ? "+" : "";
         diffBadge.innerText = `${sign}${diffPercent.toFixed(2)}%`;
         
         if (diffPercent > 0) {
-            diffBadge.className = "diff-tag diff-positive"; // 紅色 (偏貴)
+            diffBadge.className = "diff-tag diff-positive";
         } else {
-            diffBadge.className = "diff-tag diff-negative"; // 綠色 (偏宜)
+            diffBadge.className = "diff-tag diff-negative";
         }
 
-        // 3. 繪製圖表
         drawChart(avg);
-        
-        // 4. 繪製表格
         drawTable(avg);
+    }
+
+    // ★★★ 抓取台銀即時匯率 ★★★
+    async function fetchLiveBotRate() {
+        const rateEl = document.getElementById('liveBotRate');
+        const timeEl = document.getElementById('liveUpdateTime');
+        
+        try {
+            // 使用 allorigins 作為 CORS Proxy
+            const botCsvUrl = 'https://rate.bot.com.tw/xrt/flcsv/0/day';
+            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(botCsvUrl)}&t=${Date.now()}`;
+            
+            const response = await fetch(proxyUrl);
+            if (!response.ok) throw new Error('Network error');
+            const csvText = await response.text();
+            
+            // 解析 CSV
+            const lines = csvText.split('\n');
+            let usdRate = null;
+            
+            for (let line of lines) {
+                if (line.includes('USD') && line.includes('美金')) {
+                    const columns = line.split(',');
+                    // 台銀CSV: 幣別(0), 現金買入(1), 現金賣出(2)
+                    usdRate = columns[2]; 
+                    break;
+                }
+            }
+
+            if (usdRate) {
+                rateEl.innerText = parseFloat(usdRate).toFixed(2);
+                rateEl.classList.add('live-update'); // 觸發動畫
+                
+                const now = new Date();
+                const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
+                                 now.getMinutes().toString().padStart(2, '0');
+                timeEl.innerText = `更新於 ${timeString}`;
+            } else {
+                throw new Error('USD not found');
+            }
+        } catch (e) {
+            console.error(e);
+            rateEl.innerText = "--.--";
+            timeEl.innerHTML = `<a href="https://rate.bot.com.tw/xrt" target="_blank" style="color:#ef4444;text-decoration:none;">點此查詢</a>`;
+        }
     }
 
     function drawChart(avgLine) {
         const ctx = document.getElementById('rateChart').getContext('2d');
-        // 手機版圖表優化：字體調小，點半徑調小
         new Chart(ctx, {
             type: 'line',
             data: {
@@ -368,7 +410,7 @@
                     borderColor: '#2980b9',
                     backgroundColor: 'rgba(41, 128, 185, 0.1)',
                     borderWidth: 2,
-                    pointRadius: 3, // 手機上點不要太大
+                    pointRadius: 3,
                     fill: true,
                     tension: 0.3
                 }, {
@@ -383,28 +425,22 @@
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: false, // 讓 CSS 控制高度
-                interaction: {
-                    mode: 'index',
-                    intersect: false,
-                },
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
                 plugins: {
-                    legend: {
-                        labels: { boxWidth: 10, font: { size: 11 } } // 手機上圖例小一點
-                    },
+                    legend: { labels: { boxWidth: 10, font: { size: 11 } } },
                     tooltip: {
                         backgroundColor: 'rgba(0,0,0,0.8)',
                         callbacks: {
                             afterLabel: function(context) {
                                 return historicalData[context.dataIndex].event 
-                                    ? ` ${historicalData[context.dataIndex].event}` 
-                                    : '';
+                                    ? ` ${historicalData[context.dataIndex].event}` : '';
                             }
                         }
                     }
                 },
                 scales: {
-                    x: { ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 6 } }, // 手機上X軸標籤減少
+                    x: { ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 6 } },
                     y: { min: 20 }
                 }
             }
@@ -413,13 +449,9 @@
 
     function drawTable(avg) {
         const tbody = document.querySelector('#dataTable tbody');
-        // 倒序：新的在上面
         [...historicalData].reverse().forEach(item => {
             const tr = document.createElement('tr');
-            
-            // 判斷顏色：比平均高(貶值)=紅，比平均低(升值)=綠
             const colorClass = item.rate >= avg ? 'rate-up' : 'rate-down';
-            
             tr.innerHTML = `
                 <td>${item.year}</td>
                 <td class="${colorClass}">${item.rate.toFixed(2)}</td>
@@ -429,8 +461,9 @@
         });
     }
 
-    // 啟動
+    // 啟動程式
     initDashboard();
+    fetchLiveBotRate(); // 呼叫即時匯率
 
 </script>
 
