@@ -17,7 +17,7 @@
             --text-sub: #6b7280;
             --up-color: #ef4444; 
             --down-color: #10b981; 
-            --bot-color: #0284c7; 
+            --global-color: #0f766e; /* 國際API專用色(藍綠) */
         }
 
         body {
@@ -57,8 +57,8 @@
         }
 
         .stat-card.full-width {
-            grid-column: span 2; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-            border: 1px solid #bae6fd;
+            grid-column: span 2; background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%);
+            border: 1px solid #99f6e4;
         }
 
         .stat-label { font-size: 12px; color: var(--text-sub); margin-bottom: 4px; }
@@ -66,7 +66,7 @@
         .stat-sub { font-size: 11px; color: var(--text-sub); margin-top: 4px; }
 
         .source-tag {
-            font-size: 10px; background-color: var(--bot-color); color: white;
+            font-size: 10px; background-color: var(--global-color); color: white;
             padding: 2px 6px; border-radius: 4px; margin-bottom: 5px;
             display: inline-block; position: absolute; top: 10px; right: 10px;
         }
@@ -123,7 +123,6 @@
         }
         .advisor-takeaway i { margin-top: 3px; margin-right: 10px; font-size: 16px; }
 
-        /* 排序與表格 */
         .sort-controls { display: flex; gap: 8px; margin-bottom: 10px; overflow-x: auto; padding-bottom: 4px; }
         .sort-btn {
             background: white; border: 1px solid #d1d5db; padding: 6px 12px; border-radius: 20px;
@@ -153,7 +152,7 @@
         <h1>USD/TWD 歷史匯率與動態分析</h1>
         <div class="subtitle">1975 - 2026 | 歷史數據與即時分析基準</div>
         <a href="https://www.moneydj.com/iquote/iQuoteExchange.djhtm" target="_blank" class="btn-link">
-            <i class="fa-solid fa-chart-line"></i> 前往 MoneyDJ 查詢交叉匯率
+            <i class="fa-solid fa-chart-line"></i> 前往 MoneyDJ 查詢詳細報價
         </a>
     </header>
 
@@ -168,15 +167,16 @@
             <div class="stat-value" style="color:var(--down-color);" id="minRate">--.--</div>
             <div class="stat-sub" id="minYear">--</div>
         </div>
+        
         <div class="stat-card full-width">
-            <div class="source-tag"><i class="fa-solid fa-building-columns"></i> 台灣銀行</div>
-            <div class="stat-label" style="color:#0284c7; font-weight:bold;">最新即時匯率 (現金賣出)</div>
-            <div class="stat-value loading-text" id="currentRateDisplay" style="color:#0369a1; font-size:32px; margin: 5px 0;">連線抓取中...</div>
+            <div class="source-tag"><i class="fa-solid fa-globe"></i> 國際公開匯率 API</div>
+            <div class="stat-label" style="color:#0f766e; font-weight:bold;">最新即時匯率 (市場中價參考)</div>
+            <div class="stat-value loading-text" id="currentRateDisplay" style="color:#0d9488; font-size:32px; margin: 5px 0;">急速連線中...</div>
             <div style="display:flex; align-items: center; justify-content: center; margin-top: 4px;">
                 <span class="stat-sub" id="diffText">與長期均值乖離率 </span>
                 <span id="diffBadge" class="diff-tag" style="display:none;">--%</span>
             </div>
-            <div class="stat-sub" id="updateTimeText" style="margin-top:8px; opacity:0.7;">正在與伺服器連線...</div>
+            <div class="stat-sub" id="updateTimeText" style="margin-top:8px; opacity:0.7;">正在取得即時報價...</div>
         </div>
     </div>
 
@@ -280,48 +280,37 @@
         renderChart(globalAvg);
         sortData(currentSortMode); 
         
-        // 呼叫動態分析邏輯引擎
         updateDynamicAnalysis(currentData.rate, globalAvg, diffPercent);
     }
 
-    // ★ 核心邏輯：動態生成建議 ★
     function updateDynamicAnalysis(currentRate, avgRate, diffPercent) {
         const container = document.getElementById('dynamicAnalysisContainer');
         let titleColor, icon, titleText, insightHtml, advisorBg, advisorBorder, advisorTextColor, advisorText;
 
-        // 邏輯 1：美元非常貴 (乖離率 > 2.5%)
         if (diffPercent > 2.5) {
-            titleColor = "#dc2626"; // 紅色
-            icon = "fa-arrow-trend-up";
-            titleText = "當前狀態：美元處於歷史相對高位區間";
+            titleColor = "#dc2626"; icon = "fa-arrow-trend-up"; titleText = "當前狀態：美元處於歷史相對高位區間";
             insightHtml = `
-                <p class="insight-text">根據最新即時數據（${currentRate.toFixed(2)}），目前匯率顯著高於過去50年長期平均。這主要反映了市場對美國總經數據的強勢預期，或是短期內避險資金的大量匯聚。</p>
+                <p class="insight-text">根據最新即時數據（${currentRate.toFixed(2)}），目前匯率顯著高於過去50年長期平均。這主要反映了強勢美元週期或短期內避險資金的大量匯聚。</p>
                 <ul class="insight-text" style="padding-left:18px; margin-top:8px;">
-                    <li><strong>優勢：</strong>持有美元資產的客戶目前享有匯兌收益。</li>
-                    <li><strong>風險：</strong>若未來美國降息循環加快，美元面臨較大的均值回歸（回調）壓力。</li>
+                    <li><strong>優勢：</strong>持有美元資產的客戶目前享有顯著匯兌收益。</li>
+                    <li><strong>風險：</strong>若未來美國降息速度優於預期，美元面臨較大的均值回歸（回調）壓力。</li>
                 </ul>`;
             advisorBg = "#fef2f2"; advisorBorder = "#ef4444"; advisorTextColor = "#991b1b";
-            advisorText = "<strong>💡 配置顧問建議：</strong><br>目前不建議客戶單筆大額買進美元。針對想投入的資金，強烈建議採取『定期定額』分批進場以平攤匯率風險；對於已持有大量美元的客戶，現在是檢視並活化資產、鎖定利潤的好時機。";
+            advisorText = "<strong>💡 配置顧問建議：</strong><br>目前不建議客戶單筆大額買進美元。針對想投入的資金，強烈建議採取『定期定額』分批進場以平攤高位匯率風險；對於已持有大量美元的客戶，現在是檢視並活化資產、鎖定利潤的好時機。";
         } 
-        // 邏輯 2：美元非常便宜 (乖離率 < -2.5%)
         else if (diffPercent < -2.5) {
-            titleColor = "#059669"; // 綠色
-            icon = "fa-arrow-trend-down";
-            titleText = "當前狀態：美元處於歷史相對低位區間";
+            titleColor = "#059669"; icon = "fa-arrow-trend-down"; titleText = "當前狀態：美元處於歷史相對低位區間";
             insightHtml = `
                 <p class="insight-text">根據最新即時數據（${currentRate.toFixed(2)}），目前匯率明顯低於50年均線。台幣相對強勢通常發生在台灣出口貿易極度熱絡，或是外資大量湧入台股的時期。</p>
                 <ul class="insight-text" style="padding-left:18px; margin-top:8px;">
                     <li><strong>優勢：</strong>新台幣購買力強，是累積美元資產的絕佳「折扣期」。</li>
-                    <li><strong>風險：</strong>台灣為出口導向，央行通常不會放任台幣無限制升值。</li>
+                    <li><strong>風險：</strong>台灣為出口導向，長期過強的台幣不利經濟，央行通常會適時介入。</li>
                 </ul>`;
             advisorBg = "#ecfdf5"; advisorBorder = "#10b981"; advisorTextColor = "#065f46";
             advisorText = "<strong>💡 配置顧問建議：</strong><br>現在是極佳的美元佈局時機！建議客戶把握「匯率凹洞」，逢低分批加碼美元保單或美元計價之金融商品，未來有機會享有『利差與匯差』的雙重增長空間。";
         } 
-        // 邏輯 3：美元在歷史平均附近 (乖離率介於 -2.5% 到 2.5% 之間)
         else {
-            titleColor = "#0284c7"; // 藍色
-            icon = "fa-scale-balanced";
-            titleText = "當前狀態：匯率處於歷史長期均衡區間";
+            titleColor = "#0284c7"; icon = "fa-scale-balanced"; titleText = "當前狀態：匯率處於歷史長期均衡區間";
             insightHtml = `
                 <p class="insight-text">根據最新即時數據（${currentRate.toFixed(2)}），目前匯率非常貼近過去50年的長期平均線（${avgRate.toFixed(2)}）。市場目前處於多空交戰的平衡狀態，無明顯的極端高估或低估。</p>
                 <ul class="insight-text" style="padding-left:18px; margin-top:8px;">
@@ -331,7 +320,6 @@
             advisorText = "<strong>💡 配置顧問建議：</strong><br>在均值區間，『時間』比『時機』更重要。此時無須過度猜測匯率走勢，重點應回歸客戶的『理財目標』與『資產配置需求』，根據其風險承受度穩健建立美元部位。";
         }
 
-        // 將生成的 HTML 注入區塊
         container.innerHTML = `
             <div class="insight-card">
                 <h4 style="color: ${titleColor};"><i class="fa-solid ${icon}"></i> ${titleText}</h4>
@@ -344,62 +332,42 @@
         `;
     }
 
+    // ★ 終極穩定的免費 API：ExchangeRate-API ★
+    // 無需 API Key，原生支援 CORS，永不被瀏覽器阻擋
     async function fetchLiveRateAndUpdate() {
         const displayEl = document.getElementById('currentRateDisplay');
         const timeEl = document.getElementById('updateTimeText');
         
-        const botCsvUrl = 'https://rate.bot.com.tw/xrt/flcsv/0/day';
-        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(botCsvUrl)}&t=${Date.now()}`;
-
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3500);
+        const apiUrl = 'https://api.exchangerate-api.com/v4/latest/USD';
 
         try {
-            const response = await fetch(proxyUrl, { signal: controller.signal });
-            clearTimeout(timeoutId); 
-            
+            const response = await fetch(apiUrl);
             const data = await response.json();
-            if (!data.contents) throw new Error("無內容");
-
-            const lines = data.contents.split(/\r?\n/);
-            let liveUsdRate = null;
-
-            for (let line of lines) {
-                if (line.includes('USD') && line.includes('美金')) {
-                    const columns = line.split(',');
-                    if (columns[2]) {
-                        liveUsdRate = parseFloat(columns[2].trim());
-                    }
-                    break;
-                }
-            }
+            
+            // 直接抓取 TWD 的匯率 (這是一個非常乾淨的 JSON 結構)
+            const liveUsdRate = data.rates.TWD;
 
             if (liveUsdRate && !isNaN(liveUsdRate)) {
                 historicalData[historicalData.length - 1].rate = liveUsdRate;
-                historicalData[historicalData.length - 1].event = "即時匯率 (真實數據連線成功)";
+                historicalData[historicalData.length - 1].event = "即時匯率 (國際市場中價參考)";
                 
                 displayEl.classList.remove('loading-text');
                 
                 const now = new Date();
                 const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-                timeEl.innerHTML = `<i class="fa-solid fa-check-circle" style="color:#10b981;"></i> 最新真實牌告更新成功 (${timeStr})`;
+                timeEl.innerHTML = `<i class="fa-solid fa-check-circle" style="color:#10b981;"></i> 國際API連線成功 (${timeStr})`;
                 
                 calculateAndRender();
             } else {
                 throw new Error("格式錯誤");
             }
         } catch (error) {
-            const simulatedRate = 32.61; 
-            historicalData[historicalData.length - 1].rate = simulatedRate;
-            historicalData[historicalData.length - 1].event = "即時匯率 (銀行連線受阻，顯示系統備援)";
-            
+            console.error("API 連線失敗:", error);
+            // 極端情況備用
+            historicalData[historicalData.length - 1].rate = 32.61;
+            historicalData[historicalData.length - 1].event = "即時匯率 (系統備援)";
             displayEl.classList.remove('loading-text');
-            displayEl.style.color = "#0369a1"; 
-            
-            const now = new Date();
-            const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-            timeEl.innerHTML = `<i class="fa-solid fa-bolt" style="color:#eab308;"></i> 系統防護限制連線，已啟用備援展示數據 (${timeStr})`;
-            
+            timeEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color:#f59e0b;"></i> 連線異常，啟用備援數據`;
             calculateAndRender(); 
         }
     }
@@ -425,7 +393,7 @@
         sortedData.forEach(item => {
             const tr = document.createElement('tr');
             const colorClass = item.rate >= globalAvg ? 'rate-up' : 'rate-down';
-            const isLatest = item.year === 2025 ? 'style="background-color:#f0f9ff;"' : '';
+            const isLatest = item.year === 2025 ? 'style="background-color:#f0fdfa;"' : '';
             
             tr.innerHTML = `
                 <td ${isLatest}><strong>${item.year === 2025 ? '最新即時' : item.year}</strong></td>
@@ -451,8 +419,8 @@
                 datasets: [{
                     label: '匯率走勢',
                     data: chartData.map(d => d.rate),
-                    borderColor: '#2980b9',
-                    backgroundColor: 'rgba(41, 128, 185, 0.1)',
+                    borderColor: '#0f766e',
+                    backgroundColor: 'rgba(15, 118, 110, 0.1)',
                     borderWidth: 2,
                     pointRadius: 2,
                     fill: true,
@@ -497,7 +465,7 @@
         
         setTimeout(() => {
             fetchLiveRateAndUpdate(); 
-        }, 500);
+        }, 300); // 縮短延遲，API抓太快了
     };
 </script>
 
