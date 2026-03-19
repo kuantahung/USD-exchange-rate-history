@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>USD/TWD 歷史匯率與排序分析</title>
+    <title>USD/TWD 歷史匯率與趨勢分析</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -18,6 +18,7 @@
             --up-color: #ef4444; 
             --down-color: #10b981; 
             --bot-color: #0284c7; 
+            --warning: #f59e0b;
         }
 
         body {
@@ -45,18 +46,9 @@
             text-align: center;
         }
 
-        h1 {
-            font-size: 20px;
-            margin: 0 0 8px 0;
-            font-weight: 700;
-        }
+        h1 { font-size: 20px; margin: 0 0 8px 0; font-weight: 700; }
+        .subtitle { font-size: 13px; color: var(--text-sub); }
 
-        .subtitle {
-            font-size: 13px;
-            color: var(--text-sub);
-        }
-
-        /* 電腦版與手機版佈局優化 */
         .stats-grid {
             display: grid;
             grid-template-columns: 1fr 1fr; 
@@ -65,12 +57,8 @@
         }
 
         @media (min-width: 768px) {
-            .stats-grid {
-                grid-template-columns: 1fr 1fr 2fr; /* 電腦版讓即時匯率佔右側一半 */
-            }
-            .stat-card.full-width {
-                grid-column: auto !important; 
-            }
+            .stats-grid { grid-template-columns: 1fr 1fr 2fr; }
+            .stat-card.full-width { grid-column: auto !important; }
         }
 
         .stat-card {
@@ -93,196 +81,103 @@
             border: 1px solid #bae6fd;
         }
 
-        .stat-label {
-            font-size: 12px;
-            color: var(--text-sub);
-            margin-bottom: 4px;
-        }
-
-        .stat-value {
-            font-size: 24px;
-            font-weight: 800;
-            color: var(--primary-color);
-            transition: color 0.3s;
-        }
-        
-        .stat-sub {
-            font-size: 11px;
-            color: var(--text-sub);
-            margin-top: 4px;
-        }
+        .stat-label { font-size: 12px; color: var(--text-sub); margin-bottom: 4px; }
+        .stat-value { font-size: 24px; font-weight: 800; color: var(--primary-color); transition: color 0.3s; }
+        .stat-sub { font-size: 11px; color: var(--text-sub); margin-top: 4px; }
 
         .source-tag {
-            font-size: 10px;
-            background-color: var(--bot-color);
-            color: white;
-            padding: 2px 6px;
-            border-radius: 4px;
-            margin-bottom: 5px;
-            display: inline-block;
-            position: absolute;
-            top: 10px;
-            right: 10px;
+            font-size: 10px; background-color: var(--bot-color); color: white;
+            padding: 2px 6px; border-radius: 4px; margin-bottom: 5px;
+            display: inline-block; position: absolute; top: 10px; right: 10px;
         }
 
         .diff-tag {
-            display: inline-block;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: bold;
-            margin-left: 5px;
-            vertical-align: middle;
+            display: inline-block; padding: 2px 6px; border-radius: 4px;
+            font-size: 11px; font-weight: bold; margin-left: 5px; vertical-align: middle;
         }
-        
         .diff-positive { background-color: rgba(239, 68, 68, 0.1); color: var(--up-color); }
         .diff-negative { background-color: rgba(16, 185, 129, 0.1); color: var(--down-color); }
 
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.3; }
-            100% { opacity: 1; }
-        }
-        .loading-text {
-            animation: pulse 1s infinite;
-            color: #94a3b8 !important;
-        }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+        .loading-text { animation: pulse 1s infinite; color: #94a3b8 !important; }
 
         .btn-link {
-            display: block;
-            width: 100%;
-            text-align: center;
-            background-color: var(--accent-color);
-            color: white;
-            padding: 12px 0;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 14px;
-            margin-top: 10px;
-            transition: background 0.3s;
+            display: block; width: 100%; text-align: center; background-color: var(--accent-color);
+            color: white; padding: 12px 0; border-radius: 8px; text-decoration: none;
+            font-weight: 600; font-size: 14px; margin-top: 10px; transition: background 0.3s;
         }
-        
-        .btn-link:hover {
-            background-color: #1e6091;
-        }
+        .btn-link:hover { background-color: #1e6091; }
 
         .section-title {
-            font-size: 16px;
-            font-weight: 700;
-            margin: 24px 0 12px 0;
-            display: flex;
-            align-items: center;
+            font-size: 16px; font-weight: 700; margin: 24px 0 12px 0; display: flex; align-items: center;
         }
         .section-title::before {
-            content: '';
-            display: block;
-            width: 4px;
-            height: 16px;
-            background: var(--accent-color);
-            margin-right: 8px;
-            border-radius: 2px;
+            content: ''; display: block; width: 4px; height: 16px; background: var(--accent-color);
+            margin-right: 8px; border-radius: 2px;
         }
 
         .chart-box {
-            background: var(--card-bg);
-            padding: 10px;
-            border-radius: 12px;
-            height: 300px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            background: var(--card-bg); padding: 10px; border-radius: 12px;
+            height: 300px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 20px;
         }
 
-        .sort-controls {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 10px;
-            overflow-x: auto;
-            padding-bottom: 4px;
+        /* 分析模塊樣式 */
+        .analysis-section {
+            background: linear-gradient(to bottom right, #ffffff, #f8fafc);
+            border-radius: 12px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+            border: 1px solid #e2e8f0; margin-bottom: 24px;
+        }
+        .analysis-grid {
+            display: grid; grid-template-columns: 1fr; gap: 16px; margin-top: 12px;
+        }
+        @media (min-width: 600px) { .analysis-grid { grid-template-columns: 1fr 1fr; } }
+        
+        .insight-card {
+            background: white; border-radius: 8px; padding: 16px; border: 1px solid #f1f5f9;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+        }
+        .insight-card h4 {
+            margin: 0 0 10px 0; font-size: 14px; color: var(--primary-color); display: flex; align-items: center;
+        }
+        .insight-card h4 i { margin-right: 6px; }
+        .insight-list {
+            margin: 0; padding-left: 18px; font-size: 13px; color: #475569; line-height: 1.6;
+        }
+        .insight-list li { margin-bottom: 6px; }
+        .advisor-takeaway {
+            background: #eff6ff; border-left: 4px solid #3b82f6; padding: 12px 16px;
+            border-radius: 0 8px 8px 0; margin-top: 16px; font-size: 13px; color: #1e3a8a;
         }
 
+        .sort-controls { display: flex; gap: 8px; margin-bottom: 10px; overflow-x: auto; padding-bottom: 4px; }
         .sort-btn {
-            background: white;
-            border: 1px solid #d1d5db;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            color: var(--text-main);
-            cursor: pointer;
-            white-space: nowrap;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 4px;
+            background: white; border: 1px solid #d1d5db; padding: 6px 12px; border-radius: 20px;
+            font-size: 12px; color: var(--text-main); cursor: pointer; white-space: nowrap;
+            transition: all 0.2s; display: flex; align-items: center; gap: 4px;
         }
-
-        .sort-btn.active {
-            background: var(--accent-color);
-            color: white;
-            border-color: var(--accent-color);
-            box-shadow: 0 2px 5px rgba(41, 128, 185, 0.3);
-        }
+        .sort-btn.active { background: var(--accent-color); color: white; border-color: var(--accent-color); }
 
         .table-wrapper {
-            background: var(--card-bg);
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            overflow-x: auto;
-            max-height: 500px;
-            overflow-y: auto;
+            background: var(--card-bg); border-radius: 12px; overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow-x: auto; max-height: 500px; overflow-y: auto;
         }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 14px;
-            white-space: nowrap;
-        }
-
-        th {
-            background-color: #f8f9fa;
-            color: var(--text-sub);
-            font-weight: 600;
-            text-align: left;
-            padding: 12px 16px;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            border-bottom: 2px solid #e5e7eb;
-        }
-
-        td {
-            padding: 12px 16px;
-            border-bottom: 1px solid #f0f0f0;
-        }
-        
+        table { width: 100%; border-collapse: collapse; font-size: 14px; white-space: nowrap; }
+        th { background-color: #f8f9fa; color: var(--text-sub); font-weight: 600; text-align: left; padding: 12px 16px; position: sticky; top: 0; z-index: 10; border-bottom: 2px solid #e5e7eb; }
+        td { padding: 12px 16px; border-bottom: 1px solid #f0f0f0; }
         tr:nth-child(even) { background-color: #fafafa; }
-        
         .rate-up { color: var(--up-color); font-weight: bold; }
         .rate-down { color: var(--down-color); font-weight: bold; }
-        
-        .event-text {
-            font-size: 12px;
-            color: #555;
-            white-space: normal;
-            min-width: 180px;
-        }
+        .event-text { font-size: 12px; color: #555; white-space: normal; min-width: 180px; }
 
-        footer {
-            text-align: center;
-            font-size: 11px;
-            color: #9ca3af;
-            margin-top: 30px;
-            font-weight: 500;
-        }
+        footer { text-align: center; font-size: 11px; color: #9ca3af; margin-top: 30px; font-weight: 500; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <header>
-        <h1>USD/TWD 歷史匯率與排序分析</h1>
-        <div class="subtitle">1975 - 2025 | 歷史數據基準</div>
+        <h1>USD/TWD 歷史匯率與趨勢預估</h1>
+        <div class="subtitle">1975 - 2026 | 歷史數據與即時分析基準</div>
         <a href="https://www.moneydj.com/iquote/iQuoteExchange.djhtm" target="_blank" class="btn-link">
             <i class="fa-solid fa-chart-line"></i> 前往 MoneyDJ 查詢交叉匯率
         </a>
@@ -294,13 +189,11 @@
             <div class="stat-value" id="avgRate">--.--</div>
             <div class="stat-sub">長期基準線</div>
         </div>
-
         <div class="stat-card">
             <div class="stat-label">歷史最低 (台幣強)</div>
             <div class="stat-value" style="color:var(--down-color);" id="minRate">--.--</div>
             <div class="stat-sub" id="minYear">--</div>
         </div>
-        
         <div class="stat-card full-width">
             <div class="source-tag"><i class="fa-solid fa-building-columns"></i> 台灣銀行</div>
             <div class="stat-label" style="color:#0284c7; font-weight:bold;">最新即時匯率 (現金賣出)</div>
@@ -313,23 +206,46 @@
         </div>
     </div>
 
-    <div class="section-title">趨勢走勢圖</div>
+    <div class="section-title">歷史趨勢走勢圖</div>
     <div class="chart-box">
         <canvas id="rateChart"></canvas>
     </div>
 
+    <div class="section-title">近期美元走勢預估與分析</div>
+    <div class="analysis-section">
+        <p style="font-size: 13px; color: #64748b; margin-top: 0;">整合當前總經數據與央行政策之多空因素交叉比對：</p>
+        
+        <div class="analysis-grid">
+            <div class="insight-card">
+                <h4 style="color: #dc2626;"><i class="fa-solid fa-arrow-trend-up"></i> 支撐美元因素 (抗跌力道)</h4>
+                <ul class="insight-list">
+                    <li>**AI 產業資本磁吸效應**：美股科技巨頭與基礎設施的龐大資金需求，持續吸引全球資本回流美國。</li>
+                    <li>**美國經濟韌性**：就業市場與消費數據相對穩健，降低了聯準會 (Fed) 激進降息的迫切性。</li>
+                    <li>**地緣政治避險**：全球貿易摩擦與區域衝突的不確定性，維持了美元作為終極避險資產的地位。</li>
+                </ul>
+            </div>
+            
+            <div class="insight-card">
+                <h4 style="color: #059669;"><i class="fa-solid fa-arrow-trend-down"></i> 美元承壓因素 (回調風險)</h4>
+                <ul class="insight-list">
+                    <li>**降息循環啟動**：隨著通膨受控，美國長天期公債殖利率觸頂回落，縮小了美台利差。</li>
+                    <li>**台灣出口強勁**：受惠於半導體與伺服器供應鏈，龐大的出口創匯產生實質的新台幣買盤需求。</li>
+                    <li>**非美貨幣復甦**：歐洲與亞洲經濟基本面若落底回溫，將促使資金從美元分散配置。</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="advisor-takeaway">
+            <strong>💡 專業配置建議 (Advisor Takeaway)</strong><br>
+            從歷史 50 年數據來看，匯率具有明顯的「均值回歸」特性。若當前匯率乖離率偏高（美元偏貴），不建議單筆重押換匯；反之，若乖離率接近或低於 0%，則是佈局美元資產的絕佳時機。<strong>透過分批佈局美元計價的保單或 ETF，不僅能分散匯率風險，更能有效參與全球核心資產增長。</strong>
+        </div>
+    </div>
+
     <div class="section-title">年度詳細數據</div>
-    
     <div class="sort-controls">
-        <button class="sort-btn active" onclick="sortData('year')">
-            <i class="fa-regular fa-calendar"></i> 依年份
-        </button>
-        <button class="sort-btn" onclick="sortData('high')">
-            <i class="fa-solid fa-arrow-down-wide-short"></i> 匯率由高到低
-        </button>
-        <button class="sort-btn" onclick="sortData('low')">
-            <i class="fa-solid fa-arrow-up-wide-short"></i> 匯率由低到高
-        </button>
+        <button class="sort-btn active" onclick="sortData('year')"><i class="fa-regular fa-calendar"></i> 依年份</button>
+        <button class="sort-btn" onclick="sortData('high')"><i class="fa-solid fa-arrow-down-wide-short"></i> 匯率由高到低</button>
+        <button class="sort-btn" onclick="sortData('low')"><i class="fa-solid fa-arrow-up-wide-short"></i> 匯率由低到高</button>
     </div>
 
     <div class="table-wrapper">
@@ -341,8 +257,7 @@
                     <th>重大財經事件</th>
                 </tr>
             </thead>
-            <tbody id="tableBody">
-            </tbody>
+            <tbody id="tableBody"></tbody>
         </table>
     </div>
 
@@ -385,7 +300,7 @@
         { year: 2022, rate: 29.76, event: "美國聯準會暴力升息" },
         { year: 2023, rate: 31.16, event: "美元高利環境持續" },
         { year: 2024, rate: 32.10, event: "AI 產業熱潮 / 強勢美元" },
-        { year: 2025, rate: 32.00, event: "系統初始值" } // 佔位符
+        { year: 2025, rate: 32.00, event: "系統初始值" } 
     ];
 
     function calculateAndRender() {
@@ -414,7 +329,6 @@
         sortData(currentSortMode); 
     }
 
-    // ★ 強制超時機制 (解決電腦版卡住的問題) ★
     async function fetchLiveRateAndUpdate() {
         const displayEl = document.getElementById('currentRateDisplay');
         const timeEl = document.getElementById('updateTimeText');
@@ -422,14 +336,12 @@
         const botCsvUrl = 'https://rate.bot.com.tw/xrt/flcsv/0/day';
         const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(botCsvUrl)}&t=${Date.now()}`;
 
-        // 建立一個 3.5 秒的計時器，如果超時就強制中斷
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 3500);
 
         try {
-            // 將 signal 傳入 fetch 進行監控
             const response = await fetch(proxyUrl, { signal: controller.signal });
-            clearTimeout(timeoutId); // 成功連線就解除炸彈
+            clearTimeout(timeoutId); 
             
             const data = await response.json();
             if (!data.contents) throw new Error("無內容");
@@ -462,10 +374,8 @@
                 throw new Error("格式錯誤");
             }
         } catch (error) {
-            // 這裡會捕捉到所有的失敗：包括被擋掉、斷線，以及被我們的 AbortController 強制中斷
-            console.warn("啟動備援展示機制，原因:", error.name === 'AbortError' ? '連線逾時' : error.message);
+            console.warn("啟動備援展示機制");
             
-            // 給予一個擬真的合理匯率，讓動畫與流程能繼續跑
             const simulatedRate = 32.61; 
             historicalData[historicalData.length - 1].rate = simulatedRate;
             historicalData[historicalData.length - 1].event = "即時匯率 (銀行連線受阻，顯示系統備援)";
@@ -475,7 +385,7 @@
             
             const now = new Date();
             const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-            timeEl.innerHTML = `<i class="fa-solid fa-bolt" style="color:#eab308;"></i> 電腦防護限制連線，已啟用備援展示數據 (${timeStr})`;
+            timeEl.innerHTML = `<i class="fa-solid fa-bolt" style="color:#eab308;"></i> 系統防護限制連線，已啟用備援展示數據 (${timeStr})`;
             
             calculateAndRender(); 
         }
@@ -576,7 +486,6 @@
             fetchLiveRateAndUpdate(); 
         }, 500);
     };
-
 </script>
 
 </body>
