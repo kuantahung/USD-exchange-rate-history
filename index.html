@@ -56,11 +56,21 @@
             color: var(--text-sub);
         }
 
+        /* 電腦版與手機版佈局優化 */
         .stats-grid {
             display: grid;
             grid-template-columns: 1fr 1fr; 
             gap: 12px;
             margin-bottom: 20px;
+        }
+
+        @media (min-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr 1fr 2fr; /* 電腦版讓即時匯率佔右側一半 */
+            }
+            .stat-card.full-width {
+                grid-column: auto !important; 
+            }
         }
 
         .stat-card {
@@ -404,7 +414,7 @@
         sortData(currentSortMode); 
     }
 
-    // ★ 關鍵雙重保險機制 ★
+    // ★ 強制超時機制 (解決電腦版卡住的問題) ★
     async function fetchLiveRateAndUpdate() {
         const displayEl = document.getElementById('currentRateDisplay');
         const timeEl = document.getElementById('updateTimeText');
@@ -412,11 +422,16 @@
         const botCsvUrl = 'https://rate.bot.com.tw/xrt/flcsv/0/day';
         const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(botCsvUrl)}&t=${Date.now()}`;
 
+        // 建立一個 3.5 秒的計時器，如果超時就強制中斷
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3500);
+
         try {
-            // 1. 嘗試抓取真實資料
-            const response = await fetch(proxyUrl);
-            const data = await response.json();
+            // 將 signal 傳入 fetch 進行監控
+            const response = await fetch(proxyUrl, { signal: controller.signal });
+            clearTimeout(timeoutId); // 成功連線就解除炸彈
             
+            const data = await response.json();
             if (!data.contents) throw new Error("無內容");
 
             const lines = data.contents.split(/\r?\n/);
@@ -433,7 +448,6 @@
             }
 
             if (liveUsdRate && !isNaN(liveUsdRate)) {
-                // 成功抓取真實資料
                 historicalData[historicalData.length - 1].rate = liveUsdRate;
                 historicalData[historicalData.length - 1].event = "即時匯率 (真實數據連線成功)";
                 
@@ -448,24 +462,22 @@
                 throw new Error("格式錯誤");
             }
         } catch (error) {
-            console.warn("防火牆阻擋抓取，啟動備援展示機制...");
+            // 這裡會捕捉到所有的失敗：包括被擋掉、斷線，以及被我們的 AbortController 強制中斷
+            console.warn("啟動備援展示機制，原因:", error.name === 'AbortError' ? '連線逾時' : error.message);
             
-            // 2. 備援機制：如果被擋下，延遲 1 秒後載入備援數據，確保動態效果能順利展演
-            setTimeout(() => {
-                // 給予一個擬真的合理匯率
-                const simulatedRate = 32.61; 
-                historicalData[historicalData.length - 1].rate = simulatedRate;
-                historicalData[historicalData.length - 1].event = "即時匯率 (系統備援展示數據)";
-                
-                displayEl.classList.remove('loading-text');
-                displayEl.style.color = "#0369a1"; // 維持正常的藍色
-                
-                const now = new Date();
-                const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-                timeEl.innerHTML = `<i class="fa-solid fa-bolt" style="color:#eab308;"></i> 銀行連線受限，已啟用備援展示數據 (${timeStr})`;
-                
-                calculateAndRender(); // 依然能順暢更新圖表與乖離率！
-            }, 1000); 
+            // 給予一個擬真的合理匯率，讓動畫與流程能繼續跑
+            const simulatedRate = 32.61; 
+            historicalData[historicalData.length - 1].rate = simulatedRate;
+            historicalData[historicalData.length - 1].event = "即時匯率 (銀行連線受阻，顯示系統備援)";
+            
+            displayEl.classList.remove('loading-text');
+            displayEl.style.color = "#0369a1"; 
+            
+            const now = new Date();
+            const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+            timeEl.innerHTML = `<i class="fa-solid fa-bolt" style="color:#eab308;"></i> 電腦防護限制連線，已啟用備援展示數據 (${timeStr})`;
+            
+            calculateAndRender(); 
         }
     }
 
@@ -536,7 +548,7 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 interaction: { mode: 'index', intersect: false },
-                animation: { duration: 800, easing: 'easeOutQuart' }, // 讓線條重繪時有平滑動畫
+                animation: { duration: 800, easing: 'easeOutQuart' }, 
                 plugins: {
                     legend: { labels: { boxWidth: 10, font: { size: 11 } } },
                     tooltip: {
@@ -557,11 +569,9 @@
     }
 
     window.onload = () => {
-        // 1. 初始狀態：先不要畫圖，呈現「連線抓取中...」的視覺
         document.getElementById('avgRate').innerText = "--.--";
         document.getElementById('minRate').innerText = "--.--";
         
-        // 2. 延遲 0.5 秒後開始動作，讓使用者明確感受到「系統正在運作」
         setTimeout(() => {
             fetchLiveRateAndUpdate(); 
         }, 500);
