@@ -17,7 +17,7 @@
             --text-sub: #6b7280;
             --up-color: #ef4444; /* 紅色 */
             --down-color: #10b981; /* 綠色 */
-            --highlight: #eab308; /* 黃色高亮 */
+            --bot-color: #0284c7; /* 台銀藍 */
         }
 
         body {
@@ -76,12 +76,14 @@
             justify-content: center;
             align-items: center;
             min-height: 110px;
+            position: relative;
         }
 
-        /* 讓最後一張卡片橫跨兩欄 */
+        /* 讓最後一張卡片橫跨兩欄，並加入即時匯率的漸層背景 */
         .stat-card.full-width {
             grid-column: span 2;
-            background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border: 1px solid #bae6fd;
         }
 
         .stat-label {
@@ -94,12 +96,26 @@
             font-size: 24px;
             font-weight: 800;
             color: var(--primary-color);
+            transition: color 0.3s;
         }
         
         .stat-sub {
             font-size: 11px;
             color: var(--text-sub);
             margin-top: 4px;
+        }
+
+        .source-tag {
+            font-size: 10px;
+            background-color: var(--bot-color);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-bottom: 5px;
+            display: inline-block;
+            position: absolute;
+            top: 10px;
+            right: 10px;
         }
 
         .diff-tag {
@@ -115,6 +131,17 @@
         .diff-positive { background-color: rgba(239, 68, 68, 0.1); color: var(--up-color); }
         .diff-negative { background-color: rgba(16, 185, 129, 0.1); color: var(--down-color); }
 
+        /* 更新動畫 */
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.4; }
+            100% { opacity: 1; }
+        }
+        .loading-text {
+            animation: pulse 1.5s infinite;
+            color: #64748b !important;
+        }
+
         /* 按鈕 */
         .btn-link {
             display: block;
@@ -128,6 +155,7 @@
             font-weight: 600;
             font-size: 14px;
             margin-top: 10px;
+            transition: background 0.3s;
         }
         
         .btn-link:hover {
@@ -252,32 +280,34 @@
 <div class="container">
     <header>
         <h1>USD/TWD 歷史匯率與排序分析</h1>
-        <div class="subtitle">1975 - 2025 | 中央銀行歷史數據基準</div>
+        <div class="subtitle">1975 - 2025 | 歷史數據基準</div>
         <a href="https://www.moneydj.com/iquote/iQuoteExchange.djhtm" target="_blank" class="btn-link">
-            <i class="fa-solid fa-chart-line"></i> 前往 MoneyDJ 查詢即時匯率
+            <i class="fa-solid fa-chart-line"></i> 前往 MoneyDJ 查詢交叉匯率
         </a>
     </header>
 
     <div class="stats-grid">
         <div class="stat-card">
             <div class="stat-label">50年平均值</div>
-            <div class="stat-value" id="avgRate">--</div>
+            <div class="stat-value" id="avgRate">--.--</div>
             <div class="stat-sub">長期基準線</div>
         </div>
 
         <div class="stat-card">
             <div class="stat-label">歷史最低 (台幣強)</div>
-            <div class="stat-value" style="color:var(--down-color);" id="minRate">--</div>
+            <div class="stat-value" style="color:var(--down-color);" id="minRate">--.--</div>
             <div class="stat-sub" id="minYear">--</div>
         </div>
         
         <div class="stat-card full-width">
-            <div class="stat-label">2025 目前參考</div>
-            <div class="stat-value" id="currentRateDisplay">--</div>
+            <div class="source-tag"><i class="fa-solid fa-building-columns"></i> 台灣銀行</div>
+            <div class="stat-label" style="color:#0284c7; font-weight:bold;">最新即時匯率 (現金賣出)</div>
+            <div class="stat-value loading-text" id="currentRateDisplay" style="color:#0369a1; font-size:32px; margin: 5px 0;">讀取中...</div>
             <div style="display:flex; align-items: center; justify-content: center; margin-top: 4px;">
-                <span class="stat-sub">乖離率 </span>
-                <span id="diffBadge" class="diff-tag">--%</span>
+                <span class="stat-sub" id="diffText">與長期均值乖離率 </span>
+                <span id="diffBadge" class="diff-tag" style="display:none;">--%</span>
             </div>
+            <div class="stat-sub" id="updateTimeText" style="margin-top:8px; opacity:0.7;">連線抓取中，請稍候...</div>
         </div>
     </div>
 
@@ -320,8 +350,13 @@
 </div>
 
 <script>
-    // 1. 定義數據 (50年完整數據)
-    const historicalData = [
+    // 全域變數
+    let globalAvg = 0;
+    let myChartInstance = null; // 用於儲存 Chart 實例，以便重新繪製
+    let currentSortMode = 'year'; // 記錄當前的排序狀態
+
+    // 1. 定義初始數據 (2025 年的數據將被即時更新覆蓋)
+    let historicalData = [
         { year: 1975, rate: 38.00, event: "固定匯率時期 (1 USD = 38 TWD)" },
         { year: 1978, rate: 36.00, event: "改為機動匯率 / 中美斷交" },
         { year: 1980, rate: 36.01, event: "第二次石油危機" },
@@ -350,95 +385,144 @@
         { year: 2022, rate: 29.76, event: "美國聯準會暴力升息" },
         { year: 2023, rate: 31.16, event: "美元高利環境持續" },
         { year: 2024, rate: 32.10, event: "AI 產業熱潮 / 強勢美元" },
-        { year: 2025, rate: 32.65, event: "目前匯率區間 (2025 Est.)" }
+        { year: 2025, rate: 32.00, event: "目前匯率參考值" } // 這個數值將會被即時數據覆蓋
     ];
 
-    let globalAvg = 0; // 全域變數儲存平均值
-
-    // 2. 初始化
-    function initDashboard() {
-        console.log("初始化...");
-        
-        // 統計計算
+    // 2. 核心計算與渲染函數 (可以被重複呼叫以更新畫面)
+    function calculateAndRender() {
+        // 計算平均與最低
         const rates = historicalData.map(d => d.rate);
         const sum = rates.reduce((a, b) => a + b, 0);
         globalAvg = sum / rates.length;
         
         const min = Math.min(...rates);
         const minYear = historicalData.find(d => d.rate === min).year;
+        
+        // 取得陣列最後一筆 (即 2025 最新的值)
         const currentData = historicalData[historicalData.length - 1];
         
-        // 更新卡片
+        // 更新頂部卡片
         document.getElementById('avgRate').innerText = globalAvg.toFixed(2);
         document.getElementById('minRate').innerText = min.toFixed(2);
         document.getElementById('minYear').innerText = `(${minYear})`;
-        document.getElementById('currentRateDisplay').innerText = currentData.rate.toFixed(2);
-
-        // 乖離率
+        
+        const displayEl = document.getElementById('currentRateDisplay');
+        displayEl.innerText = currentData.rate.toFixed(2);
+        
+        // 計算乖離率
         const diffPercent = ((currentData.rate - globalAvg) / globalAvg) * 100;
         const diffBadge = document.getElementById('diffBadge');
+        diffBadge.style.display = 'inline-block';
         diffBadge.innerText = (diffPercent > 0 ? "+" : "") + diffPercent.toFixed(2) + "%";
         diffBadge.className = diffPercent > 0 ? "diff-tag diff-positive" : "diff-tag diff-negative";
 
-        // 繪圖與製表
+        // 更新圖表與表格
         renderChart(globalAvg);
-        sortData('year'); // 預設依年份排序
+        sortData(currentSortMode); // 維持目前的排序方式重新渲染表格
     }
 
-    // 3. 排序邏輯
+    // 3. 非同步抓取台銀即時數據
+    async function fetchLiveRateAndUpdate() {
+        const displayEl = document.getElementById('currentRateDisplay');
+        const timeEl = document.getElementById('updateTimeText');
+        
+        // 使用 allorigins 作為穩定的 JSON 代理
+        const botCsvUrl = 'https://rate.bot.com.tw/xrt/flcsv/0/day';
+        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(botCsvUrl)}&t=${Date.now()}`;
+
+        try {
+            const response = await fetch(proxyUrl);
+            const data = await response.json();
+            
+            if (!data.contents) throw new Error("No content received");
+
+            const lines = data.contents.split(/\r?\n/);
+            let liveUsdRate = null;
+
+            // 解析 CSV 尋找美金現金賣出價
+            for (let line of lines) {
+                if (line.includes('USD') && line.includes('美金')) {
+                    const columns = line.split(',');
+                    if (columns[2]) {
+                        liveUsdRate = parseFloat(columns[2].trim());
+                    }
+                    break;
+                }
+            }
+
+            if (liveUsdRate && !isNaN(liveUsdRate)) {
+                // 成功抓取！覆蓋陣列中 2025 年的資料
+                historicalData[historicalData.length - 1].rate = liveUsdRate;
+                historicalData[historicalData.length - 1].event = "即時匯率 (台銀現金賣出)";
+                
+                // 移除讀取動畫
+                displayEl.classList.remove('loading-text');
+                
+                // 取得當前時間
+                const now = new Date();
+                const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+                timeEl.innerHTML = `<i class="fa-solid fa-check-circle" style="color:#10b981;"></i> 數據更新成功 (${timeStr})`;
+                
+                // ★ 重新計算所有平均值並更新畫面 ★
+                calculateAndRender();
+            } else {
+                throw new Error("CSV 解析失敗或無數據");
+            }
+        } catch (error) {
+            console.error("即時匯率抓取失敗:", error);
+            // 失敗處理：停止動畫，維持預設值
+            displayEl.classList.remove('loading-text');
+            displayEl.style.color = "#ef4444"; // 變紅色
+            timeEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color:#ef4444;"></i> 自動連線失敗，請點擊上方按鈕查詢`;
+        }
+    }
+
+    // 4. 表格排序邏輯
     function sortData(mode) {
-        // 更新按鈕樣式
+        currentSortMode = mode; // 記住當前狀態
         const btns = document.querySelectorAll('.sort-btn');
         btns.forEach(btn => btn.classList.remove('active'));
         
-        // 找出被點擊的按鈕並加亮
         if(mode === 'year') btns[0].classList.add('active');
         if(mode === 'high') btns[1].classList.add('active');
         if(mode === 'low') btns[2].classList.add('active');
 
-        // 複製陣列避免動到原資料
         let sortedData = [...historicalData];
 
-        if (mode === 'year') {
-            // 年份倒序 (新的在上面)
-            sortedData.sort((a, b) => b.year - a.year);
-        } else if (mode === 'high') {
-            // 匯率高到低
-            sortedData.sort((a, b) => b.rate - a.rate);
-        } else if (mode === 'low') {
-            // 匯率低到高
-            sortedData.sort((a, b) => a.rate - b.rate);
-        }
+        if (mode === 'year') sortedData.sort((a, b) => b.year - a.year);
+        else if (mode === 'high') sortedData.sort((a, b) => b.rate - a.rate);
+        else if (mode === 'low') sortedData.sort((a, b) => a.rate - b.rate);
 
-        renderTable(sortedData);
-    }
-
-    // 4. 渲染表格
-    function renderTable(dataToRender) {
         const tbody = document.getElementById('tableBody');
         tbody.innerHTML = '';
 
-        dataToRender.forEach(item => {
+        sortedData.forEach(item => {
             const tr = document.createElement('tr');
-            // 簡單的紅綠判斷
             const colorClass = item.rate >= globalAvg ? 'rate-up' : 'rate-down';
             
+            // 如果是即時數據，給予高亮標示
+            const isLatest = item.year === 2025 ? 'style="background-color:#f0f9ff;"' : '';
+            
             tr.innerHTML = `
-                <td><strong>${item.year}</strong></td>
-                <td class="${colorClass}">${item.rate.toFixed(2)}</td>
-                <td class="event-text">${item.event}</td>
+                <td ${isLatest}><strong>${item.year === 2025 ? '最新即時' : item.year}</strong></td>
+                <td ${isLatest} class="${colorClass}">${item.rate.toFixed(2)}</td>
+                <td ${isLatest} class="event-text">${item.event}</td>
             `;
             tbody.appendChild(tr);
         });
     }
 
-    // 5. 繪製圖表 (維持依年份排序的折線圖)
+    // 5. 繪製圖表 (動態更新版)
     function renderChart(avgLine) {
         const ctx = document.getElementById('rateChart').getContext('2d');
-        // 圖表資料必須按年份正序，否則線會亂跑
         const chartData = [...historicalData].sort((a, b) => a.year - b.year);
 
-        new Chart(ctx, {
+        // 如果圖表已存在，必須先銷毀才能重新繪製，避免重疊閃爍
+        if (myChartInstance !== null) {
+            myChartInstance.destroy();
+        }
+
+        myChartInstance = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: chartData.map(d => d.year),
@@ -452,7 +536,7 @@
                     fill: true,
                     tension: 0.3
                 }, {
-                    label: '50年平均線',
+                    label: '長期平均線',
                     data: Array(chartData.length).fill(avgLine),
                     borderColor: '#e74c3c',
                     borderWidth: 1.5,
@@ -465,6 +549,7 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 interaction: { mode: 'index', intersect: false },
+                animation: { duration: 500 }, // 加入簡短過渡動畫
                 plugins: {
                     legend: { labels: { boxWidth: 10, font: { size: 11 } } },
                     tooltip: {
@@ -484,8 +569,11 @@
         });
     }
 
-    // 啟動
-    window.onload = initDashboard;
+    // 啟動順序：先用預設值渲染版面 -> 背景發送請求抓取即時數據 -> 成功後覆蓋並重繪
+    window.onload = () => {
+        calculateAndRender();       // 先呈現骨架與靜態歷史資料
+        fetchLiveRateAndUpdate();   // 呼叫 API 抓取即時資料
+    };
 
 </script>
 
